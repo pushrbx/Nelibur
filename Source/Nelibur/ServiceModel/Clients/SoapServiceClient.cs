@@ -4,6 +4,7 @@ using System.ServiceModel.Channels;
 using System.ServiceModel.Description;
 using System.Threading.Tasks;
 using Nelibur.ServiceModel.Contracts;
+using Nelibur.ServiceModel.Services;
 using Nelibur.ServiceModel.Services.Headers;
 using Nelibur.Sword.Core;
 
@@ -24,7 +25,10 @@ namespace Nelibur.ServiceModel.Clients
             {
                 throw Error.ConfigurationError("Invalid endpointConfigurationName: Is null or empty");
             }
+
             _channelFactory = new ChannelFactory<ISoapService>(endpointConfigurationName);
+            // todo: make it configurable
+            _channelFactory.Endpoint.Behaviors.Add(new DetailedFaultsEndpointBehavior());
         }
         
         /// <summary>
@@ -42,8 +46,9 @@ namespace Nelibur.ServiceModel.Clients
             {
                 throw Error.ConfigurationError("Invalid binding: Null");
             }
+
             var epAddress = new EndpointAddress(endPointAddress);
-            var serviceEndpoint = new ServiceEndpoint(ContractDescription.GetContract(typeof(ISoapService)), binding, epAddress);
+            var serviceEndpoint = CreateServiceEndpoint(binding, epAddress);
             _channelFactory = new ChannelFactory<ISoapService>(serviceEndpoint);
         }
 
@@ -247,6 +252,14 @@ namespace Nelibur.ServiceModel.Clients
                     }
                 }
             }
+        }
+
+        private ServiceEndpoint CreateServiceEndpoint(Binding binding, EndpointAddress epAddress)
+        {
+            // todo: make this configurable, let the user disable this behavior
+            var serviceEndpoint = new ServiceEndpoint(ContractDescription.GetContract(typeof(ISoapService)), binding, epAddress);
+            serviceEndpoint.Behaviors.Add(new DetailedFaultsEndpointBehavior());
+            return serviceEndpoint;
         }
     }
 }
